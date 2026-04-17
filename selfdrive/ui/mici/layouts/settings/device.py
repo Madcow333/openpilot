@@ -7,12 +7,13 @@ from collections.abc import Callable
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.time_helpers import system_time_valid
+from openpilot.system.ui.mici_setup import BigPillButton, GreyBigButton
 from openpilot.system.ui.widgets.scroller import NavRawScrollPanel, NavScroller
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigCircleButton
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigConfirmationDialog
 from openpilot.selfdrive.ui.mici.widgets.pairing_dialog import PairingDialog
 from openpilot.selfdrive.ui.mici.onroad.driver_camera_dialog import DriverCameraDialog
-from openpilot.selfdrive.ui.mici.layouts.onboarding import TrainingGuide, TermsPage
+from openpilot.selfdrive.ui.mici.layouts.onboarding import QRCodeWidget, TrainingGuide, TermsPage
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets import Widget
@@ -20,6 +21,8 @@ from openpilot.selfdrive.ui.ui_state import device, ui_state
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.html_render import HtmlModal, HtmlRenderer
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
+
+PRIME_UPGRADE_URL = "https://connect.comma.ai"
 
 
 class ReviewTermsPage(TermsPage, NavScroller):
@@ -62,6 +65,24 @@ class MiciFccModal(NavRawScrollPanel):
     self._content.render(scroll_content_rect)
 
     rl.draw_texture_ex(self._fcc_logo, fcc_pos, 0.0, 1.0, rl.WHITE)
+
+
+class PrimeUpgradeDialog(NavScroller):
+  def __init__(self):
+    super().__init__()
+
+    close_button = BigPillButton("back")
+    close_button.set_click_callback(self.dismiss)
+
+    self._scroller.add_widgets([
+      GreyBigButton("upgrade to\ncomma prime", "scroll for QR code",
+                    gui_app.texture("icons_mici/settings/comma_icon.png", 33, 60)),
+      GreyBigButton("", "Use your phone to open connect.comma.ai and manage your comma prime subscription."),
+      GreyBigButton("scan with your phone", "or go to https://connect.comma.ai",
+                    gui_app.texture("icons_mici/setup/small_slider/slider_arrow.png", 64, 56, flip_x=True)),
+      QRCodeWidget(PRIME_UPGRADE_URL, size=220),
+      close_button,
+    ])
 
 
 def _engaged_confirmation_click(callback: Callable, action_text: str, icon: rl.Texture, exit_on_confirm: bool = True, red: bool = False):
@@ -151,8 +172,9 @@ class PairBigButton(BigButton):
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
 
-    # TODO: show ad dialog when clicked if not prime
     if ui_state.prime_state.is_paired():
+      if not ui_state.prime_state.is_prime():
+        gui_app.push_widget(PrimeUpgradeDialog())
       return
     dlg: BigDialog | PairingDialog
     if not system_time_valid():
