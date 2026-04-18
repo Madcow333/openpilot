@@ -11,12 +11,6 @@ This documents the exact DMS-disable and cloud-disable patch that was applied su
 - DMS-disable patch commit: `e03ee9ada`
 - Device verification date: April 18, 2026
 
-Required baseline on this fork:
-
-- DMS disabled
-- `manage_athenad` disabled
-- `uploader` disabled
-
 This guide assumes the branch that actually installs on the device is:
 
 ```text
@@ -32,8 +26,6 @@ The working build on the comma 4 includes all of the following:
 - driver monitoring alerts short-circuited
 - seatbelt event disabled to match the requested fork behavior
 - comma cloud communication disabled by turning off `manage_athenad` and `uploader`
-
-On this fork, those cloud-disable pieces are part of the required supported baseline. They are not treated as optional hardening.
 
 After a clean reboot, the device was verified on:
 
@@ -189,8 +181,6 @@ Run compile checks before pushing anything to the device:
 python -m compileall system/manager/process_config.py selfdrive/selfdrived/selfdrived.py selfdrive/controls/controlsd.py selfdrive/modeld/modeld.py selfdrive/monitoring/helpers.py selfdrive/car/car_specific.py
 ```
 
-On this fork, that verification step also means confirming `manage_athenad` and `uploader` remain disabled in `system/manager/process_config.py`. Those are required parts of the supported baseline.
-
 ### 3. Push the branch to the installer repo
 
 The live installer branch must be updated in `Madcow333/openpilot`:
@@ -328,6 +318,5 @@ You can also roll back by checking out the last known-good commit locally and re
 
 - The local sync script installs committed `HEAD` only. Uncommitted changes are not included.
 - The bundle-based ADB path is the reliable install method when the device cannot resolve GitHub.
-- This fork's supported baseline assumes `manage_athenad` and `uploader` stay disabled alongside the DMS changes.
 - Turning off `manage_athenad` and `uploader` disables comma cloud services and uploads, but local ADB and local SSH still work.
 - Line numbers will drift over time. Search for the code patterns shown above instead of relying on fixed offsets.
