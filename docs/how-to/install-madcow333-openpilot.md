@@ -2,6 +2,8 @@
 
 This is the reliable install path for the connected comma device in this workspace.
 
+This fork's supported baseline includes the no-cloud DMS build: `manage_athenad` and `uploader` are required disables, not optional extras.
+
 ## What Actually Gets Installed
 
 The important repo for installs is:
@@ -79,3 +81,15 @@ git checkout -b my-fix
 ```
 
 That keeps future installs compatible with this hardware.
+
+## Related Docs
+
+* `docs/how-to/disable-driver-monitoring-openpilot.md`
+  Exact DMS-disable and required cloud-disable patch that was applied successfully, plus the verified bundle install flow.
+* `docs/how-to/connect-to-comma.md`
+  ADB and SSH setup details.
+
+## Legacy Script
+
+`scripts/deploy_openpilot_tizi.ps1` is still in the repo, but it relies on the device doing a live `git clone`.
+The newer `scripts/sync_openpilot_tizi_to_comma.ps1` is the preferred install script for future use.
