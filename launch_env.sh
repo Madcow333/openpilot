@@ -15,8 +15,13 @@ export VECLIB_MAXIMUM_THREADS=1
 # headroom for this until ui is moved to the CPU.
 export QCOM_PRIORITY=12
 
+# Prefer the OS already on this comma so fork installs do not force the AGNOS updater on boot.
 if [ -z "$AGNOS_VERSION" ]; then
-  export AGNOS_VERSION="18.4"
+  if [ -r /VERSION ]; then
+    export AGNOS_VERSION="$(tr -d '\n\r' < /VERSION)"
+  else
+    export AGNOS_VERSION="18.4"
+  fi
 fi
 
 export STAGING_ROOT="/data/safe_staging"

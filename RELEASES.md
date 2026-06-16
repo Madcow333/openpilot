@@ -426,7 +426,7 @@ Version 0.8.8 (2021-08-27)
  * Improved auto-exposure on comma three
  * Improved longitudinal control on Honda Nidec cars
  * Hyundai Kona Hybrid 2020 support thanks to haram-KONA!
- * Hyundai Sonata Hybrid 2021 support thanks to Matt-Wash-Burn!
+ * Hyundai Sonata Hybrid 2021 support thanks to a contributor!
  * Kia Niro Hybrid 2021 support thanks to tetious!
 
 Version 0.8.7 (2021-07-31)
@@ -1116,3 +1116,4 @@ Version 0.1  (2016-11-29)
  * Lane keep assist is working
  * Support for Acura ILX 2016 with AcuraWatch Plus
  * Support for Honda Civic 2016 Touring Edition
+
