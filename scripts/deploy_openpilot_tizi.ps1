@@ -225,6 +225,7 @@ function Wait-ForAdbDevice {
   param([int]$TimeoutSeconds = 90)
 
   $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+  $resetAttempted = $false
   while ((Get-Date) -lt $deadline) {
     try {
       $devices = Get-AdbOutput -Arguments @("devices") -TimeoutSeconds $AdbProbeTimeoutSeconds
@@ -233,9 +234,16 @@ function Wait-ForAdbDevice {
           Where-Object { $_ -match "^\S+\s+device$" }
       )
       if ($onlineDevices.Count -gt 0) {
+        if (Get-Command Reset-AdbDaemon -ErrorAction SilentlyContinue) {
+          Reset-AdbDaemon -AdbPath $AdbPath
+        }
         return
       }
     } catch {
+      if (-not $resetAttempted -and (Get-Command Reset-AdbDaemon -ErrorAction SilentlyContinue)) {
+        $resetAttempted = $true
+        try { Reset-AdbDaemon -AdbPath $AdbPath } catch { }
+      }
     }
 
     Start-Sleep -Seconds 2
@@ -385,8 +393,18 @@ if (-not $AdbPath -or -not (Test-Path -LiteralPath $AdbPath)) {
   throw "ADB not found. Pass -AdbPath, run Fork_Manager.bat setup adb, or put adb.exe on PATH."
 }
 
+$adbSessionHelper = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) "scripts\adb_session.ps1"
+if (Test-Path -LiteralPath $adbSessionHelper) {
+  . $adbSessionHelper
+} else {
+  Write-Warning "Shared ADB session helper missing: $adbSessionHelper"
+}
+
 if ($CheckAdbOnly) {
   Write-Step "Checking adb connection"
+  if (Get-Command Ensure-AdbSession -ErrorAction SilentlyContinue) {
+    $null = Ensure-AdbSession -AdbPath $AdbPath -ProbeShell
+  }
   $devices = Get-AdbOutput -Arguments @("devices") -TimeoutSeconds $AdbProbeTimeoutSeconds
   $onlineDevices = @(
     $devices -split "\r?\n" |
@@ -413,6 +431,9 @@ if ($CheckAdbOnly) {
     Write-Warning "ADB is connected, but $DevicePath could not be inspected: $($_.Exception.Message)"
   }
 
+  if (Get-Command Finalize-AdbSession -ErrorAction SilentlyContinue) {
+    Finalize-AdbSession -AdbPath $AdbPath
+  }
   exit 0
 }
 
@@ -479,6 +500,9 @@ if ($SkipDeviceInstall) {
 }
 
 Write-Step "Checking adb connection"
+if (Get-Command Ensure-AdbSession -ErrorAction SilentlyContinue) {
+  $null = Ensure-AdbSession -AdbPath $AdbPath -ProbeShell
+}
 $devices = Get-AdbOutput -Arguments @("devices") -TimeoutSeconds $AdbProbeTimeoutSeconds
 $onlineDevices = @(
   $devices -split "\r?\n" |
@@ -659,3 +683,8 @@ Write-Host "Remote state:"
 Write-Host $deviceRemote
 Write-Host ""
 Write-Host "Future custom software string: $($installerInfo.CustomSoftware)"
+
+if (Get-Command Finalize-AdbSession -ErrorAction SilentlyContinue) {
+  # Best-effort on success path; early failures before ADB may skip this.
+  Finalize-AdbSession -AdbPath $AdbPath
+}
